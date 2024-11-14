@@ -1,0 +1,1 @@
+(To excite your brain: this may not be enough for making a sound selection of a "good reference clustering" when no ground-truth is known. Can you think of other criteria to strengthen this choice? possibly consider the stability as an attribute, and give some preference to more stables algorithms. To. learn on stability read the related literature listed in the CSN web page:
