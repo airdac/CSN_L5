@@ -17,9 +17,11 @@ karate <- upgrade_graph(karate)
 # B has to be 4x4 instead
 # G must have 200 nodes and 800 edges
 # Code for introduction's example
-B <- matrix(c(1, 0.2, 0.2, 1), ncol=2)
-G <- barabasi_albert_blocks(m=4, p=c(0.5, 0.5), B=B, t_max=100
-                            , type="Hajek", sample_with_replacement = FALSE)
+b <- matrix(c(1, 0.2, 0.2, 1), ncol = 2)
+g <- barabasi_albert_blocks(
+  m = 4, p = c(0.5, 0.5), B = B, t_max = 100,
+  type = "Hajek", sample_with_replacement = FALSE
+)
 
 # Transform to an undirected simple graph (remove weights)
 # Use adjacency matrix
