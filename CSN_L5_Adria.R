@@ -50,7 +50,7 @@ edge_counts <- table(edges_names)
 # Assign counts to edges' weights
 E(enron)$weight <- as.integer(edge_counts[edges_names])
 
-# Remove self-loops
+# Remove self-loops and multiedges
 enron <- simplify(enron)
 
 # Check code worked
