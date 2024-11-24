@@ -3,8 +3,10 @@
 # Adrià Casanova, Dmitriy Chukhray
 
 library(igraph)
-library(igraphdata)
+suppressPackageStartupMessages(library(igraph))
 library(clustAnalytics)
+
+set.seed(42)
 
 #####################################################
 # Load data
@@ -13,6 +15,7 @@ library(clustAnalytics)
 # karate
 data(karate, package = "igraphdata")
 karate <- upgrade_graph(karate)
+plot(karate, main = "Karate Network")
 
 # synthetic
 b <- matrix(
@@ -31,16 +34,28 @@ synthetic <- barabasi_albert_blocks(
 # check the generated network has 4 clusters
 wc <- cluster_walktrap(synthetic)
 unique(unname(membership(wc)))
-plot(wc, synthetic)
+plot(wc, synthetic, main = "Synthetic Network")
 
 # ENRON
-# Transform to an undirected simple graph (remove weights)
-# Use adjacency matrix
+# Transform to an undirected simple weighted graph
 data("enron", package = "igraphdata")
 enron <- upgrade_graph(enron)
-M.enron <- as_adjacency_matrix(as_undirected(enron, mode = "each"))
-M.enron[M.enron != 0] <- 1 # Replace all non-zero weights with 1
-enron <- graph_from_adjacency_matrix(M.enron, mode = "undirected", weighted = NULL)
+enron <- as_undirected(enron, mode = "each")
+
+# Count the number of edges between each pair of nodes
+edges <- ends(enron, E(enron)) # Get node pairs of all edges
+edges_names <- apply(edges, 1, function(x) paste(sort(x), collapse = "-"))
+edge_counts <- table(edges_names)
+
+# Assign counts to edges' weights
+E(enron)$weight <- as.integer(edge_counts[edges_names])
+
+# Remove self-loops
+enron <- simplify(enron)
+
+# Check code worked
+head(E(enron)$weight)
+plot(enron, vertex.size = 7, main = "ENRON Network")
 
 # A network of our choice
 # Dolphins social network from
@@ -55,28 +70,24 @@ plot(dolphins, vertex.size = 5, main = "Dolphin Social Network")
 
 # Function to compute Jaccard index between clusters of different clusterings
 jaccard_sim <- function(clustering1, clustering2) {
-  n_clusters1 <- length(unique(clustering1))
-  n_clusters2 <- length(unique(clustering2))
+  n_clusters1 <- unique(clustering1)
+  n_clusters2 <- unique(clustering2)
 
-  # Initialize an empty matrix to store the Jaccard indices
-  jaccard_matrix <- matrix(0, nrow = n_clusters1, ncol = n_clusters2)
-  rownames(jaccard_matrix) <- 1:n_clusters1
-  colnames(jaccard_matrix) <- 1:n_clusters2
+  # Compute Jaccard index for a pair of clusters
+  jaccard_index <- function(c1, c2) {
+    cluster1_nodes <- which(clustering1 == c1)
+    cluster2_nodes <- which(clustering2 == c2)
 
-  # Loop over each pair of clusters
-  for (i in 1:n_clusters1) {
-    for (j in 1:n_clusters2) {
-      # Get the nodes in each cluster
-      cluster1_nodes <- which(clustering1 == i)
-      cluster2_nodes <- which(clustering2 == j)
+    intersection <- length(intersect(cluster1_nodes, cluster2_nodes))
+    union <- length(union(cluster1_nodes, cluster2_nodes))
 
-      # Compute the Jaccard index
-      intersection <- length(intersect(cluster1_nodes, cluster2_nodes))
-      union <- length(union(cluster1_nodes, cluster2_nodes))
-
-      jaccard_matrix[i, j] <- intersection / union
-    }
+    return(intersection / union)
   }
+
+  # Fill the output table
+  jaccard_matrix <- outer(n_clusters1, n_clusters2, Vectorize(jaccard_index))
+  rownames(jaccard_matrix) <- n_clusters1
+  colnames(jaccard_matrix) <- n_clusters2
 
   return(jaccard_matrix)
 }
@@ -87,6 +98,7 @@ c1 <- unname(membership(wc))
 c2 <- V(karate)$Faction
 
 jaccard_table <- jaccard_sim(c1, c2)
+print("1. Jaccard index between clusters of different clusterings")
 print(jaccard_table)
 
 
@@ -107,6 +119,7 @@ match_clusters <- function(table, name1, name2) {
 
 # Test
 matched_clusters <- match_clusters(jaccard_table, "WC", "GT")
+print("2. Most similar cluster in clustering 2 to each cluster of clustering 1")
 print(matched_clusters)
 
 
@@ -123,6 +136,7 @@ Wmean <- function(v, w) {
 # Compute fraction of number of nodes
 w <- table(c1) / length(c1)
 global_jaccard_sim <- Wmean(matched_clusters, w)
+print("3. Global Jaccard similarity")
 print(global_jaccard_sim)
 
 # The weighted mean is a more reasonable similarity than the mean value because
