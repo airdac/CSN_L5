@@ -32,13 +32,13 @@ plot_dendrogram(GN)
 modularity(GN); modularity(fc)
 
 # Adjacency matrix
-as_adjacency_matrix(as_undirected(karate,mode = "each"))
+as_adjacency_matrix(as.undirected(karate,mode = "each"))
 
 data("UKfaculty", package="igraphdata")
 UKfaculty <- upgrade_graph(UKfaculty)
 plot(UKfaculty)
 as_adjacency_matrix(UKfaculty)
-as_adjacency_matrix(as_undirected(UKfaculty, mode="each"))
+as_adjacency_matrix(as.undirected(UKfaculty, mode="each"))
 
 # Evaluate significance of a few clusterings through various scoring functions
 evaluate_significance(karate

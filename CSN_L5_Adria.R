@@ -40,7 +40,7 @@ plot(wc, synthetic, main = "Synthetic Network")
 # Transform to an undirected simple weighted graph
 data("enron", package = "igraphdata")
 enron <- upgrade_graph(enron)
-enron <- as_undirected(enron, mode = "each")
+enron <- as.undirected(enron, mode = "each")
 
 # Count the number of edges between each pair of nodes
 edges <- ends(enron, E(enron)) # Get node pairs of all edges
@@ -92,14 +92,38 @@ jaccard_sim <- function(clustering1, clustering2) {
   return(jaccard_matrix)
 }
 
-# Set up two clusterings on the karate dataset to test the function
+lc <- cluster_louvain(karate)
+lc1 <- unname(membership(lc))
+lc2 <- V(karate)$Faction
+
+jaccard_table_l <- jaccard_sim(lc1, lc2)
+print("Jaccard index between clusters created by Louvain algorithm and ground truth clusters")
+print(jaccard_table_l)
+
+lpc <- cluster_label_prop(karate)
+lpc1 <- unname(membership(lpc))
+lpc2 <- V(karate)$Faction
+
+jaccard_table_lp <- jaccard_sim(lpc1, lpc2)
+print("Jaccard index between clusters created by Label Propagation algorithm and ground truth clusters")
+print(jaccard_table_lp)
+
+
 wc <- cluster_walktrap(karate)
 c1 <- unname(membership(wc))
 c2 <- V(karate)$Faction
 
-jaccard_table <- jaccard_sim(c1, c2)
-print("1. Jaccard index between clusters of different clusterings")
-print(jaccard_table)
+jaccard_table_w <- jaccard_sim(c1, c2)
+print("Jaccard index between clusters created by Walktrap algorithm and ground truth clusters")
+print(jaccard_table_w)
+
+ebc <- cluster_edge_betweenness(karate)
+ebc1 <- unname(membership(ebc))
+ebc2 <- V(karate)$Faction
+
+jaccard_table_eb <- jaccard_sim(ebc1, ebc2)
+print("Jaccard index between clusters created by Edge Betweenness algorithm and ground truth clusters")
+print(jaccard_table_eb)
 
 
 #########################################################################
@@ -117,10 +141,21 @@ match_clusters <- function(table, name1, name2) {
   return(jaccard_indices)
 }
 
-# Test
-matched_clusters <- match_clusters(jaccard_table, "WC", "GT")
-print("2. Most similar cluster in clustering 2 to each cluster of clustering 1")
-print(matched_clusters)
+matched_clusters_l <- match_clusters(jaccard_table_l, "LC", "GT")
+print("Most similar cluster in clustering 2 (GT) to each cluster of clustering 1 (LC)")
+print(matched_clusters_l)
+
+matched_clusters_lp <- match_clusters(jaccard_table_lp, "LPC", "GT")
+print("Most similar cluster in clustering 2 (GT) to each cluster of clustering 1 (LPC)")
+print(matched_clusters_lp)
+
+matched_clusters_w <- match_clusters(jaccard_table_w, "WC", "GT")
+print("Most similar cluster in clustering 2 (GT) to each cluster of clustering 1 (WC)")
+print(matched_clusters_w)
+
+matched_clusters_eb <- match_clusters(jaccard_table_eb, "EBC", "GT")
+print("Most similar cluster in clustering 2 (GT) to each cluster of clustering 1 (EBC)")
+print(matched_clusters_eb)
 
 
 ##############################
@@ -134,10 +169,25 @@ Wmean <- function(v, w) {
 
 # Average of jaccard indices weighted by fraction of number of nodes
 # Compute fraction of number of nodes
+w <- table(lc1) / length(lc1)
+global_jaccard_sim_l <- Wmean(matched_clusters_l, w)
+print("Global Jaccard similarity of clusters produced by Louvain algorithm")
+print(global_jaccard_sim_l)
+
+w <- table(lpc1) / length(lpc1)
+global_jaccard_sim_lp <- Wmean(matched_clusters_lp, w)
+print("Global Jaccard similarity of clusters produced by Label Propagation algorithm")
+print(global_jaccard_sim_lp)
+
 w <- table(c1) / length(c1)
-global_jaccard_sim <- Wmean(matched_clusters, w)
-print("3. Global Jaccard similarity")
-print(global_jaccard_sim)
+global_jaccard_sim_w <- Wmean(matched_clusters_w, w)
+print("Global Jaccard similarity of clusters produced by Walktrap algorithm")
+print(global_jaccard_sim_w)
+
+w <- table(ebc1) / length(ebc1)
+global_jaccard_sim_eb <- Wmean(matched_clusters_eb, w)
+print("Global Jaccard similarity of clusters produced by Edge Betweenness algorithm")
+print(global_jaccard_sim_eb)
 
 # The weighted mean is a more reasonable similarity than the mean value because
 # it accounts for the size of each cluster, giving more importance to larger clusters
@@ -148,4 +198,30 @@ print(global_jaccard_sim)
 # similarity is taking the harmonic mean, which mitigates the impact of large
 # outliers and aggravates the impact of small ones. Hence, very similar clusters
 # are not so important when using the harmonic mean, while very distinct clusters
-# penalize a lot the global Jaccard index.
+# penalize a lot the global Jaccard index. Basically, harmonic mean of is useful when
+# we want to ensure that all clusters, regardless of size, are equally considered, 
+# and when it's important to identify and emphasize any poor matches between clusters.
+
+
+# Function to compute harmonic mean
+Hmean <- function(v) {
+  return(length(v) / sum(1 / v))
+}
+
+# Calculate Harmonic Mean Global Jaccard Similarity
+harmonic_jaccard_sim_l <- Hmean(matched_clusters_l)
+print("Harmonic Jaccard similarity of clusters produced by Louvain algorithm")
+print(harmonic_jaccard_sim_l)
+
+harmonic_jaccard_sim_lp <- Hmean(matched_clusters_lp)
+print("Harmonic Jaccard similarity of clusters produced by Label Propagation algorithm")
+print(harmonic_jaccard_sim_lp)
+
+harmonic_jaccard_sim_w <- Hmean(matched_clusters_w)
+print("Harmonic Jaccard similarity of clusters produced by Walktrap algorithm")
+print(harmonic_jaccard_sim_w)
+
+harmonic_jaccard_sim_eb <- Hmean(matched_clusters_eb)
+print("Harmonic Jaccard similarity of clusters produced by Edge Betweenness algorithm")
+print(harmonic_jaccard_sim_eb)
+
