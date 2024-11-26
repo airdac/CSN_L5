@@ -225,3 +225,147 @@ harmonic_jaccard_sim_eb <- Hmean(matched_clusters_eb)
 print("Harmonic Jaccard similarity of clusters produced by Edge Betweenness algorithm")
 print(harmonic_jaccard_sim_eb)
 
+
+
+##############################
+# 4.Evaluate the significance of clusterings produced by different community detection methods
+##############################
+
+# The first thing we have to do is decide which metrics from evaluate_significance are relevant.
+# Then based on these metrics we have to choose the best ranked clustering for data with no ground truth.
+# We decided to choose modularity and coverage metrics.
+
+# Define clustering algorithms
+algorithms <- list(
+  Louvain = cluster_louvain,
+  LabelPropagation = cluster_label_prop,
+  Walktrap = cluster_walktrap,
+  EdgeBetweenness = cluster_edge_betweenness
+)
+
+# Networks without ground truth
+networks_without_gt <- list(
+  Enron = enron,
+  Dolphins = dolphins
+)
+
+# Initialize a list to store modularity and coverage results
+modularity_coverage_results <- list()
+
+# Apply evaluate_significance once to each network without ground truth
+for (network_name in names(networks_without_gt)) {
+  graph <- networks_without_gt[[network_name]]
+  
+  cat("\nEvaluating", network_name, "Network:\n")
+  
+  # Apply evaluate_significance
+  res <- evaluate_significance(graph, alg_list = algorithms)
+  
+  # Extract modularity and coverage for each algorithm
+  modularity_scores <- res[14, ]  # Row 14 contains modularity
+  coverage_scores <- res[19, ]   # Row 19 contains coverage
+  
+  # Store results in the main list
+  modularity_coverage_results[[network_name]] <- list(
+    modularity = modularity_scores,
+    coverage = coverage_scores
+  )
+  
+  # Print modularity and coverage for debugging
+  cat("Modularity Scores:", modularity_scores, "\n")
+  cat("Coverage Scores:", coverage_scores, "\n")
+}
+
+modularity_coverage_results$Enron$modularity
+modularity_coverage_results$Enron$coverage
+
+# For Enron data we have to go with Louvain produced clusters as the ground truth.
+# because its best modularity score (0.2606) is produced Louvain algorithm.
+# Coverage metric is the best using Edge Betweenness algorithm (0.9945), but it is not much higher
+# than under Louvain algorithm (0.9777). If we compare Edge Betweenness score in modularity score
+# it is ~ 8.5 times lower than that of Louvain, therefore, we can assume clusters produced by Louvain algorithm
+# are the closest to the ground truth
+
+modularity_coverage_results$Dolphins$modularity
+modularity_coverage_results$Dolphins$coverage
+
+# For Dolphins data we have to go with Edge Betweenness produced clusters as the ground truth.
+# In both modularity and coverage scores it ranks as the best (0.5193 and 0.7987 respectively).
+
+# Define networks and assign specific ground truths
+networks <- list(
+  Karate = list(graph = karate, ground_truth = V(karate)$Faction),
+  Synthetic = list(graph = synthetic, ground_truth = V(synthetic)$label),
+  Enron = list(graph = enron, ground_truth = membership(cluster_louvain(enron))),  # Louvain as ground truth
+  Dolphins = list(graph = dolphins, ground_truth = membership(cluster_edge_betweenness(dolphins)))  # Edge Betweenness as ground truth
+)
+
+# Function to compute Jaccard indices
+compute_jaccard <- function(clustering, ground_truth) {
+  jaccard_table <- jaccard_sim(clustering, ground_truth)  
+  weights <- table(clustering) / length(clustering)       
+  global_jaccard <- Wmean(apply(jaccard_table, 1, max), weights)  
+  list(local = jaccard_table, global = global_jaccard)
+}
+
+# Initialize results
+results <- list()
+
+for (network_name in names(networks)) {
+  network <- networks[[network_name]]
+  graph <- network$graph
+  ground_truth <- network$ground_truth
+  
+  cat("\nEvaluating", network_name, "Network:\n")
+  
+  # Evaluate clustering significance
+  res <- evaluate_significance(graph, alg_list = algorithms, gt_clustering = ground_truth)
+  
+  # Compute Jaccard indices for each algorithm
+  jaccard_indices <- lapply(algorithms, function(algo) {
+    clustering <- membership(algo(graph))
+    compute_jaccard(clustering, ground_truth)
+  })
+  
+  # Store results
+  results[[network_name]] <- list(significance = res, jaccard = jaccard_indices)
+  print(res)
+  
+  # Print Jaccard indices
+  cat("\nJaccard Indices:\n")
+  for (algo_name in names(jaccard_indices)) {
+    jaccard <- jaccard_indices[[algo_name]]
+    cat("\nAlgorithm:", algo_name, "\n")
+    cat("Global Jaccard Index:", jaccard$global, "\n")
+    cat("Local Jaccard Table:\n")
+    print(jaccard$local)
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
