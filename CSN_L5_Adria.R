@@ -232,7 +232,7 @@ print(harmonic_jaccard_sim_eb)
 ##############################
 
 # The first thing we have to do is decide which metrics from evaluate_significance are relevant.
-# Then based on these metrics we have to choose the best ranked clustering for data with no ground truth.
+# Then, based on these metrics we have to choose the best ranked clustering for data with no ground truth.
 # We decided to choose modularity and coverage metrics.
 
 # Define clustering algorithms
@@ -279,11 +279,11 @@ for (network_name in names(networks_without_gt)) {
 modularity_coverage_results$Enron$modularity
 modularity_coverage_results$Enron$coverage
 
-# For Enron data we have to go with Louvain produced clusters as the ground truth.
-# because its best modularity score (0.2606) is produced Louvain algorithm.
+# For Enron data we have to go with Louvain produced clusters as the ground truth
+# because its best modularity score (0.2606) is produced by the Louvain algorithm.
 # Coverage metric is the best using Edge Betweenness algorithm (0.9945), but it is not much higher
-# than under Louvain algorithm (0.9777). If we compare Edge Betweenness score in modularity score
-# it is ~ 8.5 times lower than that of Louvain, therefore, we can assume clusters produced by Louvain algorithm
+# than under the Louvain algorithm (0.9777). If we compare the Edge Betweenness score in modularity 
+# it is ~ 8.5 times lower than that of Louvain. Therefore, we can assume clusters produced by the Louvain algorithm
 # are the closest to the ground truth
 
 modularity_coverage_results$Dolphins$modularity
@@ -291,6 +291,8 @@ modularity_coverage_results$Dolphins$coverage
 
 # For Dolphins data we have to go with Edge Betweenness produced clusters as the ground truth.
 # In both modularity and coverage scores it ranks as the best (0.5193 and 0.7987 respectively).
+
+# CAREFUL! LabelPropagation has a higher coverage than EdgeBetweenness, although it has a lower modularity as well...
 
 # Define networks and assign specific ground truths
 networks <- list(
