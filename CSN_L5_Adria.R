@@ -289,17 +289,17 @@ modularity_coverage_results$Enron$coverage
 modularity_coverage_results$Dolphins$modularity
 modularity_coverage_results$Dolphins$coverage
 
-# For Dolphins data we have to go with Edge Betweenness produced clusters as the ground truth.
-# In both modularity and coverage scores it ranks as the best (0.5193 and 0.7987 respectively).
-
-# CAREFUL! LabelPropagation has a higher coverage than EdgeBetweenness, although it has a lower modularity as well...
+# For Dolphins data we have to go with Label Propagation produced clusters as the ground truth.
+# In both modularity and coverage scores there is no clear "leader" among clustering algorithms.
+# Therefore, to choose the clustering algorithm, we decided to sum up both metrics and divide them by 2.
+# This way we identify Label Propagation clusters as the best with the score of (0.66)
 
 # Define networks and assign specific ground truths
 networks <- list(
   Karate = list(graph = karate, ground_truth = V(karate)$Faction),
   Synthetic = list(graph = synthetic, ground_truth = V(synthetic)$label),
   Enron = list(graph = enron, ground_truth = membership(cluster_louvain(enron))),  # Louvain as ground truth
-  Dolphins = list(graph = dolphins, ground_truth = membership(cluster_edge_betweenness(dolphins)))  # Edge Betweenness as ground truth
+  Dolphins = list(graph = dolphins, ground_truth = membership(cluster_label_prop(dolphins)))  # Edge Betweenness as ground truth
 )
 
 # Function to compute Jaccard indices
